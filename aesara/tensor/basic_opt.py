@@ -76,7 +76,7 @@ from aesara.tensor.basic import (
 )
 from aesara.tensor.elemwise import DimShuffle, Elemwise
 from aesara.tensor.exceptions import NotScalarConstantError, ShapeError
-from aesara.tensor.extra_ops import broadcast_shape
+from aesara.tensor.extra_ops import broadcast_shape, broadcast_to
 from aesara.tensor.math import Dot, add
 from aesara.tensor.math import all as tt_all
 from aesara.tensor.math import (
@@ -1750,7 +1750,7 @@ def local_fill_to_alloc(fgraph, node):
             rval = [cast(v, node.outputs[0].type.dtype)]
         elif r.type.broadcastable == node.outputs[0].type.broadcastable:
             # we are broadcasting v somehow, but not r
-            o = broadcast_like(v, r, fgraph, dtype=v.dtype)
+            o = broadcast_to(v, r.shape)
             copy_stack_trace(node.outputs[0], o)
             rval = [o]
         else:
