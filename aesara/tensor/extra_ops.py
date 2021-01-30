@@ -1550,16 +1550,17 @@ class BroadcastTo(Op):
 
     view_map = {0: [0]}
 
-    def __call__(self, a, shape, **kwargs):
-        return super().__call__(a, *shape, **kwargs)
+    def __call__(self, a, shape, dtype=None, **kwargs):
+        return super().__call__(a, shape, dtype=dtype, **kwargs)
 
-    def make_node(self, a, *shape):
+    def make_node(self, a, shape, dtype=None):
         a = aet.as_tensor_variable(a)
+        dtype = dtype if dtype is not None else a.type.dtype
         shape = aet.as_tensor_variable(shape, ndim=1)
 
         shape, bcast = aet.alloc_validate_shape(shape)
 
-        out = type(a.type)(dtype=a.type.dtype, broadcastable=bcast)()
+        out = type(a.type)(dtype=dtype, broadcastable=bcast)()
 
         return Apply(self, [a] + shape, [out])
 
