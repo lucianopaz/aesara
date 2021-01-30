@@ -1832,7 +1832,9 @@ def local_pow_canonicalize(fgraph, node):
     if node.op == tt_pow:
         cst = local_mul_canonizer.get_constant(node.inputs[1])
         if cst == 0:
-            return [broadcast_to(1, node.outputs[0].shape)]
+            return [
+                broadcast_to(1, node.outputs[0].shape).astype(node.outputs[0].dtype)
+            ]
         if cst == 1:
             return [broadcast_to(node.inputs[0], node.outputs[0].shape)]
     else:
@@ -1878,7 +1880,7 @@ def local_zero_div(fgraph, node):
         node.op.scalar_op, (aes.IntDiv, aes.TrueDiv)
     ):
         if local_mul_canonizer.get_constant(node.inputs[0]) == 0:
-            ret = broadcast_to(0, node.outputs[0].shape)
+            ret = broadcast_to(0, node.outputs[0].shape).astype(node.outputs[0].dtype)
             ret.tag.values_eq_approx = values_eq_approx_remove_nan
             return [ret]
 
@@ -2030,7 +2032,9 @@ def local_mul_specialize(fgraph, node):
                 has_neg ^= True  # toggles
             elif y == 0.0:
                 # if we find any zero, we just return right away
-                return [broadcast_to(0, node.outputs[0].shape)]
+                return [
+                    broadcast_to(0, node.outputs[0].shape).astype(node.outputs[0].dtype)
+                ]
             else:
                 new_inputs.append(input)
 
@@ -2060,9 +2064,17 @@ def local_mul_specialize(fgraph, node):
                 # there are no variable inputs to mul
                 # N.B. this could have been constant-folded...
                 if has_neg:
-                    return [broadcast_to(-1, node.outputs[0].shape)]
+                    return [
+                        broadcast_to(-1, node.outputs[0].shape).astype(
+                            node.outputs[0].dtype
+                        )
+                    ]
                 else:
-                    return [broadcast_to(1, node.outputs[0].shape)]
+                    return [
+                        broadcast_to(1, node.outputs[0].shape).astype(
+                            node.outputs[0].dtype
+                        )
+                    ]
 
 
 register_specialize(local_mul_specialize)
