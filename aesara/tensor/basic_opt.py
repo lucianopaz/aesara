@@ -1750,7 +1750,7 @@ def local_fill_to_alloc(fgraph, node):
             rval = [cast(v, node.outputs[0].type.dtype)]
         elif r.type.broadcastable == node.outputs[0].type.broadcastable:
             # we are broadcasting v somehow, but not r
-            o = broadcast_to(v, r.shape, dtype=v.dtype)
+            o = broadcast_to(v, r.shape)
             copy_stack_trace(node.outputs[0], o)
             rval = [o]
         else:
