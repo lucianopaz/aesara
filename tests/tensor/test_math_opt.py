@@ -1812,28 +1812,24 @@ def test_log1p():
         inplace.log1p_inplace,
     ]
     f = function([x], -log(1 + (-x)), mode=m)
-    assert [node.op for node in f.maker.fgraph.toposort()] == [
-        neg,
-        inplace.log1p_inplace,
-        inplace.neg_inplace,
-    ]
+    topo = f.maker.fgraph.toposort()
+    assert all(
+        [
+            op in [node.op for node in topo]
+            for op in [neg, inplace.log1p_inplace, inplace.neg_inplace]
+        ]
+    )
 
     # check trickier cases (and use different dtype)
     y = fmatrix()
-    f = function([x, y], log(aet.fill(y, 1) + (x)), mode=m)
-    # the first three ops are Shape_i, Shape_i, and Dimshuffle
-    topo = f.maker.fgraph.toposort()
-    assert topo[-1].op == aet.alloc
-    assert log1p in [node.op for node in topo]
-
     f = function([x, y], log(0 + (x) + aet.fill(y, 1.0)), mode=m)
     topo = f.maker.fgraph.toposort()
-    assert topo[-1].op == aet.alloc
+    assert topo[-1].op == aet.extra_ops.broadcast_to
     assert log1p in [node.op for node in topo]
 
     f = function([x, y], log(2 + (x) - aet.fill(y, 1.0)), mode=m)
     topo = f.maker.fgraph.toposort()
-    assert topo[-1].op == aet.alloc
+    assert topo[-1].op == aet.extra_ops.broadcast_to
     assert log1p in [node.op for node in topo]
 
     f([1e-7, 10], [[0, 0], [0, 0]])  # debugmode will verify values
