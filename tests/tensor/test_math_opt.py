@@ -2480,10 +2480,6 @@ class TestFuncInverse:
         cx = dx + complex(0, 1) * (dx + 0.01)
         self.assert_func_pair_optimized(conj, conj, cx, is_complex=True)
 
-        # Test that non-inverse functions are ran normally
-        self.assert_func_pair_optimized(
-            conj, neg, cx, should_copy=False, is_complex=True
-        )
         dx = np.random.rand(5, 4).astype("float32") + 0.01
         self.assert_func_pair_optimized(rad2deg, rad2deg, dx, should_copy=False)
         self.assert_func_pair_optimized(rad2deg, cosh, dx, should_copy=False)
