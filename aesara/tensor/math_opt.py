@@ -1677,14 +1677,16 @@ def local_reduce_broadcastable(fgraph, node):
 @local_optimizer([Sum, Prod])
 def local_opt_alloc(fgraph, node):
     """
-    sum(alloc(constant,shapes...)) => constant*prod(shapes)
+    sum(alloc(constant,shapes...)) => constant*sum(shapes)
     or
     prod(alloc(constant,shapes...)) => constant**prod(shapes)
 
     """
     if isinstance(node.op, Sum) or isinstance(node.op, Prod):
         (node_inps,) = node.inputs
-        if node_inps.owner and isinstance(node_inps.owner.op, Alloc):
+        if node_inps.owner and (
+            isinstance(node_inps.owner.op, Alloc) or node_inps.owner.op == broadcast_to
+        ):
             input = node_inps.owner.inputs[0]
             shapes = node_inps.owner.inputs[1:]
             try:
