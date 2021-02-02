@@ -1824,12 +1824,12 @@ def test_log1p():
     y = fmatrix()
     f = function([x, y], log(0 + (x) + aet.fill(y, 1.0)), mode=m)
     topo = f.maker.fgraph.toposort()
-    assert topo[-1].op == aet.extra_ops.broadcast_to
+    assert any([node.op == aet.extra_ops.broadcast_to for node in topo])
     assert log1p in [node.op for node in topo]
 
     f = function([x, y], log(2 + (x) - aet.fill(y, 1.0)), mode=m)
     topo = f.maker.fgraph.toposort()
-    assert topo[-1].op == aet.extra_ops.broadcast_to
+    assert any([node.op == aet.extra_ops.broadcast_to for node in topo])
     assert log1p in [node.op for node in topo]
 
     f([1e-7, 10], [[0, 0], [0, 0]])  # debugmode will verify values
@@ -3271,7 +3271,7 @@ class TestLocalSumProd:
 
         for t_like, n_like, nb_nodes in [
             (aet.zeros_like, np.zeros_like, (1, 3, 3, 2)),
-            (aet.ones_like, np.ones_like, (5, 5, 5, 6)),
+            (aet.ones_like, np.ones_like, (6, 6, 6, 7)),
         ]:
             # test sum
             f = function([a], t_like(a).sum(None), mode=mode)
@@ -3282,20 +3282,14 @@ class TestLocalSumProd:
             utt.assert_allclose(f(input), n_like(input).sum())
             assert len(f.maker.fgraph.apply_nodes) == nb_nodes[0]
 
-            for d in range(3):
-                f = function([a], t_like(a).sum(d), mode=mode)
-                utt.assert_allclose(f(input), n_like(input).sum(d))
-                assert len(f.maker.fgraph.apply_nodes) == nb_nodes[1]
-                topo = f.maker.fgraph.toposort()
-                assert topo[-1].op == aet.alloc
-                assert not any([isinstance(node.op, Sum) for node in topo])
-            for i in range(3):
-                f = function([a], t_like(a).sum(i), mode=mode)
-                utt.assert_allclose(f(input), n_like(input).sum(i))
-                assert len(f.maker.fgraph.apply_nodes) == nb_nodes[2]
-                topo = f.maker.fgraph.toposort()
-                assert topo[-1].op == aet.alloc
-                assert not any([isinstance(node.op, Sum) for node in topo])
+            for i in range(1, 3):
+                for d in range(3):
+                    f = function([a], t_like(a).sum(d), mode=mode)
+                    utt.assert_allclose(f(input), n_like(input).sum(d))
+                    assert len(f.maker.fgraph.apply_nodes) == nb_nodes[i]
+                    topo = f.maker.fgraph.toposort()
+                    assert any([node.op == aet.alloc for node in topo])
+                    assert not any([isinstance(node.op, Sum) for node in topo])
 
             # test prod
             f = function([a], t_like(a).prod(None), mode=mode)
@@ -3306,20 +3300,14 @@ class TestLocalSumProd:
             utt.assert_allclose(f(input), n_like(input).prod())
             # assert len(f.maker.fgraph.apply_nodes) == nb_nodes[0]
 
-            for d in range(3):
-                f = function([a], t_like(a).prod(d), mode=mode)
-                utt.assert_allclose(f(input), n_like(input).prod(d))
-                # assert len(f.maker.fgraph.apply_nodes) == nb_nodes[1]
-                topo = f.maker.fgraph.toposort()
-                assert topo[-1].op == aet.alloc
-                assert not any([isinstance(node.op, Prod) for node in topo])
-            for i in range(3):
-                f = function([a], t_like(a).prod(i), mode=mode)
-                utt.assert_allclose(f(input), n_like(input).prod(i))
-                # assert len(f.maker.fgraph.apply_nodes) == nb_nodes[2]
-                topo = f.maker.fgraph.toposort()
-                assert topo[-1].op == aet.alloc
-                assert not any([isinstance(node.op, Prod) for node in topo])
+            for i in range(1, 3):
+                for d in range(3):
+                    f = function([a], t_like(a).prod(d), mode=mode)
+                    utt.assert_allclose(f(input), n_like(input).prod(d))
+                    # assert len(f.maker.fgraph.apply_nodes) == nb_nodes[i]
+                    topo = f.maker.fgraph.toposort()
+                    assert any([node.op == aet.alloc for node in topo])
+                    assert not any([isinstance(node.op, Prod) for node in topo])
 
             with config.change_flags(warn__sum_sum_bug=False):
                 for d, dd in [(0, 0), (1, 0), (2, 0), (0, 1), (1, 1), (2, 1)]:
@@ -3327,7 +3315,7 @@ class TestLocalSumProd:
                     utt.assert_allclose(f(input), n_like(input).sum(d).sum(dd))
                     assert len(f.maker.fgraph.apply_nodes) == nb_nodes[3]
                     topo = f.maker.fgraph.toposort()
-                    assert topo[-1].op == aet.alloc
+                    assert any([node.op == aet.alloc for node in topo])
                     assert not any([isinstance(node.op, Sum) for node in topo])
 
     def test_local_sum_sum_int8(self):
