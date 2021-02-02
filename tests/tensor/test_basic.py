@@ -544,11 +544,11 @@ class TestAlloc:
             self.allocs,
             [
                 # IncSubtensor1
-                (some_matrix[:60], 2),
+                (some_matrix[:60], 1),
                 # AdvancedIncSubtensor1
-                (some_matrix[arange(60)], 2),
+                (some_matrix[arange(60)], 1),
                 # AdvancedIncSubtensor
-                (some_matrix[idx, idx], 1),
+                (some_matrix[idx, idx], 0),
             ],
         ):
             derp = tt_sum(dense_dot(subtensor, variables))
