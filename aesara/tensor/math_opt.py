@@ -1807,7 +1807,7 @@ def local_div_to_inv(fgraph, node):
             new_out = cast(new_out, dtype=out.dtype)
         # The ones could have forced a specific length
         if new_out.type != out.type:
-            new_out = broadcast_to(new_out, out.shape)
+            new_out = broadcast_to(new_out, out.shape).astype(out.dtype)
         return [new_out]
     else:
         return False
@@ -1836,7 +1836,11 @@ def local_pow_canonicalize(fgraph, node):
                 broadcast_to(1, node.outputs[0].shape).astype(node.outputs[0].dtype)
             ]
         if cst == 1:
-            return [broadcast_to(node.inputs[0], node.outputs[0].shape)]
+            return [
+                broadcast_to(node.inputs[0], node.outputs[0].shape).astype(
+                    node.outputs[0].dtype
+                )
+            ]
     else:
         return False
 
@@ -2059,7 +2063,11 @@ def local_mul_specialize(fgraph, node):
                         new_inputs = [m1] + new_inputs
                     rval = mul(*new_inputs)
 
-                return [broadcast_to(rval, node.outputs[0].shape)]
+                return [
+                    broadcast_to(rval, node.outputs[0].shape).astype(
+                        node.outputs[0].dtype
+                    )
+                ]
             else:
                 # there are no variable inputs to mul
                 # N.B. this could have been constant-folded...
