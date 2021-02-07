@@ -2182,7 +2182,7 @@ class TestLocalUselessElemwiseComparison:
         assert (f([]) == 1).all()
 
         f = function([x], eq(g, -1))
-        self.assert_eqs_const(f, 0, op=aet.alloc)
+        self.assert_eqs_const(f, 0)
         assert (f([3, 3]) == 0).all()
 
     def test_and(self):
